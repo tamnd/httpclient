@@ -1,0 +1,10 @@
+language: go
+
+go:
+	- 1.4.1
+	- 1.4.2
+	- tip
+
+script:
+  - go build
+  - go test

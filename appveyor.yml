@@ -1,0 +1,16 @@
+environment:
+  GOPATH: c:\projects
+  PATH: %GOPATH%\bin;%PATH%
+
+install:
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - go env
+  - go version
+
+build_script:
+  - go build
+
+test_script:
+  - go test
+
+deploy: off
