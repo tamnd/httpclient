@@ -45,6 +45,39 @@ Output:
 main.Person{ID:"4", FirstName:"", Gender:"male", LastName:"", Link:"https://www.facebook.com/zuck", Locate:"", Name:"Mark Zuckerberg", Username:"zuck"}
 ```
 
+## Disclaimer
+
+### Why I made it?
+Because I'm tired of typing the following code again and again: 
+
+```go
+resp, err := http.Get("http://api.example.com")
+if err != nil {
+	return nil, err
+}
+defer resp.Body.Close()
+
+decoder := json.NewDecoder(resp.Body)
+
+var data ...
+err := decoder.Decode(&data)
+if err != nil {
+	return nil, err
+}
+return &data, nil
+```
+
+It's better to wrap all the above code in a function and call it when you need send GET request and parse the response as JSON.
+
+### When to use it?
+- Just use this package when you need to make some very simple HTTP GET requests then unmarshal the response body as json, xml, etc. If you need more than that, just use `net/http`, it is an excellent package, and has all things you need.
+- The better way is think that this package is just a collection of some code snippets. Feel free to open [client.go](https://github.com/tamnd/httpclient/blob/master/client.go) and copy/paste just the code you need.
+
+
+### Is it any good?
+[May be](https://news.ycombinator.com/item?id=3067434).
+
+
 ## Features
 - Get and unmarshal JSON from a url
 - Get and unmarshal XML from a url
@@ -80,7 +113,7 @@ func String(url string) (string, error)
 String fetches the specified URL and returns the response body as a string.
 
 ```go
-content, err := http.Client.String("http://www.example.com")
+content, err := httpclient.String("http://www.example.com")
 ```
 
 ### Get Bytes
@@ -91,7 +124,7 @@ func Bytes(url string) ([]byte, error)
 Bytes fetches the specified url and returns the response body as bytes.
 
 ```go
-bytes, err := http.Client.Bytes("http://www.example.com")
+bytes, err := httpclient.Bytes("http://www.example.com")
 ```
 
 ### Get JSON
@@ -116,7 +149,7 @@ err := httpclient.JSON("http://graph.facebook.com/4", &user)
 ### Download Files
 
 ```go
-func Download(urls []string, files []*File) error
+func Download(urls []string, files *[]File) error
 ```
 Download downloads multiple files concurrency.
 
@@ -126,7 +159,7 @@ urls := []string{
 	"http://www.clojure.org",
 	"http://www.erlang.org",
 }
-var files []*httpclient.File
+var files *[]httpclient.File
 err := httpclient.Download(urls, files)
 ```
 
