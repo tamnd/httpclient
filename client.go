@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"sync"
 )
 
 // Error is the custom error type returns from HTTP requests.
@@ -32,16 +33,16 @@ type File struct {
 
 // A Client is an HTTP client.
 // It wraps net/http's client and add some methods for making HTTP request easier.
-type Client struct {
+type httpClient struct {
 	client *http.Client
 }
 
 // New returns new client.
-func New(client *http.Client) *Client {
-	return &Client{client: client}
+func New() *httpClient {
+	return &httpClient{client: &http.Client{}}
 }
 
-func (c *Client) err(resp *http.Response, message string) error {
+func (c *httpClient) err(resp *http.Response, message string) error {
 	if message == "" {
 		message = fmt.Sprintf("Get %s -> %d", resp.Request.URL.String(), resp.StatusCode)
 	}
@@ -53,12 +54,12 @@ func (c *Client) err(resp *http.Response, message string) error {
 }
 
 // Get issues a GET to the specified URL. It returns an http.Response for further processing.
-func (c *Client) Get(url string) (*http.Response, error) {
+func (c *httpClient) Get(url string) (*http.Response, error) {
 	return c.client.Get(url)
 }
 
 // Bytes fetches the specified url and returns the response body as bytes.
-func (c *Client) Bytes(url string) ([]byte, error) {
+func (c *httpClient) Bytes(url string) ([]byte, error) {
 	resp, err := c.Get(url)
 	if err != nil {
 		return nil, err
@@ -72,7 +73,7 @@ func (c *Client) Bytes(url string) ([]byte, error) {
 }
 
 // String fetches the specified URL and returns the response body as a string.
-func (c *Client) String(url string) (string, error) {
+func (c *httpClient) String(url string) (string, error) {
 	bytes, err := c.Bytes(url)
 	if err != nil {
 		return "", err
@@ -81,7 +82,7 @@ func (c *Client) String(url string) (string, error) {
 }
 
 // Reader issues a GET request to a specified URL and returns an reader from the response body.
-func (c *Client) Reader(url string) (io.ReadCloser, error) {
+func (c *httpClient) Reader(url string) (io.ReadCloser, error) {
 	resp, err := c.Get(url)
 	if err != nil {
 		return nil, err
@@ -95,7 +96,7 @@ func (c *Client) Reader(url string) (io.ReadCloser, error) {
 }
 
 // JSON issues a GET request to a specified URL and unmarshal json data from the response body.
-func (c *Client) JSON(url string, v interface{}) error {
+func (c *httpClient) JSON(url string, v interface{}) error {
 	resp, err := c.Get(url)
 	if err != nil {
 		return err
@@ -112,7 +113,7 @@ func (c *Client) JSON(url string, v interface{}) error {
 }
 
 // XML issues a GET request to a specified URL and unmarshal XML data from the response body.
-func (c *Client) XML(url string, v interface{}) error {
+func (c *httpClient) XML(url string, v interface{}) error {
 	resp, err := c.Get(url)
 	if err != nil {
 		return err
@@ -126,11 +127,16 @@ func (c *Client) XML(url string, v interface{}) error {
 }
 
 // Files downloads multiple files concurrency.
-func (c *Client) Files(urls []string, files []*File) error {
-	ch := make(chan error, len(files))
-	for i := range files {
+func (c *httpClient) Files(urls []string, files *[]File) error {
+	l := len(urls)
+	fs := make([]File, l)
+	ch := make(chan error, l)
+	var wg sync.WaitGroup
+	wg.Add(l)
+	for i, url := range urls {
 		go func(i int) {
-			resp, err := c.Get(urls[i])
+			defer wg.Done()
+			resp, err := c.Get(url)
 			if err != nil {
 				ch <- err
 				return
@@ -142,7 +148,7 @@ func (c *Client) Files(urls []string, files []*File) error {
 				ch <- err
 				return
 			}
-			files[i].Data, err = ioutil.ReadAll(resp.Body)
+			fs[i].Data, err = ioutil.ReadAll(resp.Body)
 			if err != nil {
 				ch <- c.err(resp, err.Error())
 				return
@@ -150,20 +156,22 @@ func (c *Client) Files(urls []string, files []*File) error {
 			ch <- nil
 		}(i)
 	}
-	for range files {
+	wg.Wait()
+	for range fs {
 		if err := <-ch; err != nil {
 			return err
 		}
 	}
+	*files = fs
 	return nil
 }
 
 // Download downloads multiple files concurrency.
-func (c *Client) Download(urls []string, files []*File) error {
+func (c *httpClient) Download(urls []string, files *[]File) error {
 	return c.Files(urls, files)
 }
 
-var client = &Client{client: &http.Client{}}
+var client = New()
 
 // Get issues a GET to the specified URL. It returns an http.Response for further processing.
 func Get(url string) (*http.Response, error) {
@@ -196,11 +204,11 @@ func XML(url string, v interface{}) error {
 }
 
 // Files downloads multiple files concurrency.
-func Files(urls []string, files []*File) error {
+func Files(urls []string, files *[]File) error {
 	return client.Files(urls, files)
 }
 
 // Download downloads multiple files concurrency.
-func Download(urls []string, files []*File) error {
+func Download(urls []string, files *[]File) error {
 	return client.Files(urls, files)
 }

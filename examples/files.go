@@ -11,10 +11,10 @@ func main() {
 	urls := []string{
 		"http://www.golang.org",
 		"http://www.clojure.org",
-		"http://www.erlang.org",
+		"http://www.haskell.org",
 	}
-	var files []*httpclient.File
-	err := httpclient.Download(urls, files)
+	var files []httpclient.File
+	err := httpclient.Download(urls, &files)
 	if err != nil {
 		log.Fatal(err)
 	}
