@@ -45,8 +45,6 @@ Output:
 main.Person{ID:"4", FirstName:"", Gender:"male", LastName:"", Link:"https://www.facebook.com/zuck", Locate:"", Name:"Mark Zuckerberg", Username:"zuck"}
 ```
 
-## Disclaimer
-
 ### Why I made it?
 Because I'm tired of typing the following code again and again: 
 
