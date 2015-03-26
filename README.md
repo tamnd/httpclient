@@ -89,7 +89,7 @@ $ go get github.com/tamnd/httpclient
 ## Usage
 
 ```go
-import "tamnd/misc/httpclient"
+import "github.com/tamnd/httpclient"
 ```
 
 ## How to
