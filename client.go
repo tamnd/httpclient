@@ -157,7 +157,7 @@ func (c *httpClient) Files(urls []string, files *[]File) error {
 		}(i)
 	}
 	wg.Wait()
-	for range fs {
+	for _ = range fs {
 		if err := <-ch; err != nil {
 			return err
 		}
