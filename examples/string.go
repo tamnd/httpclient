@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	content, err := httpclient.String("http://www.example.com")
+	content, err := httpclient.String("http://www.google.com")
 	if err != nil {
 		log.Fatal(err)
 	}
